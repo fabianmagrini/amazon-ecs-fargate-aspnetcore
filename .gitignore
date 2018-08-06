@@ -1,9 +1,9 @@
 # Operating system files
 .DS_Store
 
-# Binaries for programs and plugins
-*.exe
-*.dll
-
 # VS Code
 .vscode/*
+
+# asp.net core
+[Bb]in/
+[Oo]bj/

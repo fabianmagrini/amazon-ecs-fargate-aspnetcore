@@ -10,7 +10,7 @@ The development environment needs to have the following :-
 
 a)Mac os 10.X or higher
 
-b).NET core 2.0
+b).NET core 2.1
 
 c)Docker latest version
 
@@ -23,17 +23,17 @@ e)aws ecs cli
 # Create ASP.NET core mvc application
 Let's leverage the terminal in the mac for creating, building and publishing the ASP.NET core mvc core application. Navigate to the directory where the entire set up needs to be created and issue the following commands in the terminal
 
-mkdir mymvcweb
+mkdir webapp
 
-cd mymvcweb
+cd webapp
 
-dotnet new
+dotnet new mvc
 
 dotnet restore
 
 dotnet build 
 
-dotnet publish - c "Release"
+dotnet publish -c "Release"
 
 
 
@@ -53,20 +53,19 @@ Create the following Dockerfile in the mymvcweb folder.
 
 
 ``` Dockerfile
-FROM microsoft/aspnetcore:2.0
+FROM microsoft/dotnet
  
-WORKDIR /mymvcweb
-COPY bin/Release/netcoreapp2.0/publish .
+WORKDIR /webapp
+COPY bin/Release/netcoreapp2.1/publish .
  
-ENV ASPNETCORE_URLS http://+:5000
+ENV ASPNETCORE_URLS http://*:5000
 EXPOSE 5000
  
-ENTRYPOINT ["dotnet", "mymvcweb.dll"]
-
+ENTRYPOINT ["dotnet", "webapp.dll"]
 ```
 
 
-The above Dockerfile definition creates an ASP.NET core 2.0 container and copies the application deployment package from 'bin/Release/netcoreapp2.0/publish' folder on to mymvcweb folder in the container.It also leverages Kestrel as the web server and the default port of 5000 for ASP.NET core mymvc application. 
+The above Dockerfile definition creates an ASP.NET core 2.1 container and copies the application deployment package from 'bin/Release/netcoreapp2.1/publish' folder on to webapp folder in the container.It also leverages Kestrel as the web server and the default port of 5000 for ASP.NET core mvc application. 
 
 
 # Create Nginx container
@@ -106,7 +105,7 @@ http {
     sendfile on;
  
     upstream app_servers {
-        server mymvcweb:5000;
+        server webapp:5000;
     }
  
     server {
@@ -187,34 +186,36 @@ The docker-compose build should give you the following results and container ids
 
 
 ```
-Building mymvcweb
-Step 1/6 : FROM microsoft/aspnetcore:2.0
- ---> c8e388523897
-Step 2/6 : WORKDIR /mymvcweb
+Building webapp
+Step 1/6 : FROM microsoft/dotnet
+ ---> 9e243db15f91
+Step 2/6 : WORKDIR /webapp
  ---> Using cache
- ---> a84539366440
-Step 3/6 : COPY bin/Release/netcoreapp2.0/publish .
- ---> Using cache
- ---> 20413b534ce2
-Step 4/6 : ENV ASPNETCORE_URLS http://+:5000
- ---> Using cache
- ---> 12aa8b85ecf8
+ ---> 5f3fa4cf1f7b
+Step 3/6 : COPY bin/Release/netcoreapp2.1/publish .
+ ---> a5a0cfffc714
+Step 4/6 : ENV ASPNETCORE_URLS http://*:5000
+ ---> Running in 7f114e117695
+Removing intermediate container 7f114e117695
+ ---> 4b84509384c3
 Step 5/6 : EXPOSE 5000
- ---> Using cache
- ---> a1045008f67d
-Step 6/6 : ENTRYPOINT ["dotnet", "mymvcweb.dll"]
- ---> Using cache
- ---> d63c60da7a9d
-Successfully built d63c60da7a9d
-Successfully tagged aspnetcorefargate_mymvcweb:latest
+ ---> Running in c5a3da83726b
+Removing intermediate container c5a3da83726b
+ ---> 19a4e93b9235
+Step 6/6 : ENTRYPOINT ["dotnet", "webapp.dll"]
+ ---> Running in 102203e2de0b
+Removing intermediate container 102203e2de0b
+ ---> e1e8e8be5b6c
+Successfully built e1e8e8be5b6c
+Successfully tagged amazon-ecs-fargate-aspnetcore_webapp:latest
 Building reverseproxy
 Step 1/2 : FROM nginx
- ---> 73acd1f0cfad
+ ---> c82521676580
 Step 2/2 : COPY nginx.conf /etc/nginx/nginx.conf
  ---> Using cache
- ---> 4c5e493bc01d
-Successfully built 4c5e493bc01d
-Successfully tagged aspnetcorefargate_reverseproxy:latest
+ ---> bf88043f4f44
+Successfully built bf88043f4f44
+Successfully tagged amazon-ecs-fargate-aspnetcore_reverseproxy:latest
 ```
 
 
@@ -223,16 +224,17 @@ Then invoke 'docker-compose up' command in the terminal. It should give you the 
 
 
 ```
-Creating aspnetcorefargate_mymvcweb_1     ... done
-Creating aspnetcorefargate_mymvcweb_1     ... 
-Creating aspnetcorefargate_reverseproxy_1 ... done
-Attaching to aspnetcorefargate_mymvcweb_1, aspnetcorefargate_reverseproxy_1
-mymvcweb_1      | warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
-mymvcweb_1      |       No XML encryptor configured. Key {2059191a-ff77-4fa9-a968-0962d7a8f10b} may be persisted to storage in unencrypted form.
-mymvcweb_1      | Hosting environment: Production
-mymvcweb_1      | Content root path: /mymvcweb
-mymvcweb_1      | Now listening on: http://[::]:5000
-mymvcweb_1      | Application started. Press Ctrl+C to shut down
+Recreating amazon-ecs-fargate-aspnetcore_webapp_1 ... done
+Recreating amazon-ecs-fargate-aspnetcore_reverseproxy_1 ... done
+Attaching to amazon-ecs-fargate-aspnetcore_webapp_1, amazon-ecs-fargate-aspnetcore_reverseproxy_1
+webapp_1        | warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+webapp_1        |       No XML encryptor configured. Key {ea830594-f6b3-42c9-8687-1d250442421d} may be persisted to storage in unencrypted form.
+webapp_1        | Hosting environment: Production
+webapp_1        | Content root path: /webapp
+webapp_1        | Now listening on: http://[::]:5000
+webapp_1        | Application started. Press Ctrl+C to shut down.
+webapp_1        | warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+webapp_1        |       Failed to determine the https port for redirect.
 ```
 
 

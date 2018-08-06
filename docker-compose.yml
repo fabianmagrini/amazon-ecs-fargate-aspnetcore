@@ -1,11 +1,5 @@
 version: '2'
 services:
-  mymvcweb:
-    build:
-      context: ./mymvcweb
-      dockerfile: Dockerfile
-    expose:
-      - "5000"
   reverseproxy:
     build:
       context: ./reverseproxy
@@ -13,7 +7,14 @@ services:
     ports:
       - "80:80"
     links :
-      - mymvcweb
+      - webapp
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+
 
 
 
