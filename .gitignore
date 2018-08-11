@@ -7,3 +7,7 @@
 # asp.net core
 [Bb]in/
 [Oo]bj/
+
+# terraform
+.terraform/*
+*/.terraform/*

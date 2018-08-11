@@ -125,7 +125,7 @@ http {
 ```
 
 
-Since we are in the development environment we can tag service name 'mymvcweb' for the 'upstream app_servers' section in the nginx.conf file. When this is hosted in AWS Fargate task, we need change the value of 'upstream app_servers' to '127.0.0.1:5000'. Because when the Fargate task runs in Awsvpc networking mode (which is default) it will use the local loopback interface of 127.0.01 to connect to the other container (service) defined as a part of the Fargate task which will be covered in the later sections.
+Since we are in the development environment we can tag service name 'webapp' for the 'upstream app_servers' section in the nginx.conf file. When this is hosted in AWS Fargate task, we need change the value of 'upstream app_servers' to '127.0.0.1:5000'. Because when the Fargate task runs in Awsvpc networking mode (which is default) it will use the local loopback interface of 127.0.01 to connect to the other container (service) defined as a part of the Fargate task which will be covered in the later sections.
 
 
 
@@ -151,12 +151,6 @@ Now let's compose both these container as an application by defining the Docker-
 ``` .yaml
 version: '2'
 services:
-  mymvcweb:
-    build:
-      context: ./mymvcweb
-      dockerfile: Dockerfile
-    expose:
-      - "5000"
   reverseproxy:
     build:
       context: ./reverseproxy
@@ -164,12 +158,18 @@ services:
     ports:
       - "80:80"
     links :
-      - mymvcweb
+      - webapp
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
 
 ```
 
 
-The above docker-compose.yml defines two service. The first service 'mymvcweb' relies the Dockerfile definition defined in the mymvcweb folder and it exposes port (5000) to another service 'reverseproxy'. The second service 'reverseproxy' runs the nginx container on the port 80 and exposes port 80 to outside world. It also links with the first service 'mymvcweb'. The links are good for docker-compose.yml in the development environment. When you convert this into ECS service definition for Fargate tasks links are not supported in the Awsvpc networking mode.
+The above docker-compose.yml defines two service. The first service 'webapp' relies the Dockerfile definition defined in the webapp folder and it exposes port (5000) to another service 'reverseproxy'. The second service 'reverseproxy' runs the nginx container on the port 80 and exposes port 80 to outside world. It also links with the first service 'webapp'. The links are good for docker-compose.yml in the development environment. When you convert this into ECS service definition for Fargate tasks links are not supported in the Awsvpc networking mode.
 
 
 
@@ -248,39 +248,39 @@ docer-compse rm
 
 
 # Push container images to ECR
-Create two ECR repositories nameyl 'mywebmvc' and 'reverseproxy', one for the ASP.NET core mvc application and other for the nginx reverse proxy.
+Create two ECR repositories nameyl 'webapp' and 'reverseproxy', one for the ASP.NET core mvc application and other for the nginx reverse proxy.
 
 
 
-Now let's fetch the push commands for 'mywebmvc' repository and execute the following in the terminal.
+Now let's fetch the push commands for 'webapp' repository and execute the following in the terminal.
 
 
 
 ```
-aws ecr get-login --no-include-email --region us-east-1
+aws ecr get-login --no-include-email --region ap-southeast-2
 ```
 
 
 
 It should return you the docker login command with token. Copy the Docker login with tokens and execute.
 
-Tag the local container image (for mymvcweb) with the remote ECR repository.
+Tag the local container image (for webapp) with the remote ECR repository.
 
 
 
 ```
-docker tag aspnetcorefargate_mymvcweb:latest yourawsaccountnumber.dkr.ecr.us-east-1.amazonaws.com/mymvcweb:latest 
+docker tag aspnetcorefargate_webapp:latest yourawsaccountnumber.dkr.ecr.ap-southeast-2.amazonaws.com/webapp:latest 
 
 ```
 
 
 
-Push the 'mymvcweb' image to the remote 'mymvvcweb' repository.
+Push the 'webapp' image to the remote 'webapp' repository.
 
 
 
 ```
-docker push yourawsaccountnumber.dkr.ecr.us-east-1.amazonaws.com/mywebmvc:latest 
+docker push yourawsaccountnumber.dkr.ecr.ap-southeast-2.amazonaws.com/webapp:latest 
 ```
 
 
@@ -289,9 +289,9 @@ Follow the same steps for 'reverseproxy' repository to push the nginx container.
 
 
 ```
-docker tag aspnetcorefargate_reverseproxy:latest yourawsaccountnumber.dkr.ecr.us-east-1.amazonaws.com/reverseproxy:latest 
+docker tag aspnetcorefargate_reverseproxy:latest yourawsaccountnumber.dkr.ecr.ap-southeast-2.amazonaws.com/reverseproxy:latest 
 
-docker push yourawsaccountnumber.dkr.ecr.us-east-1.amazonaws.com/reverseproxy:latest 
+docker push yourawsaccountnumber.dkr.ecr.ap-southeast-2.amazonaws.com/reverseproxy:latest 
 
 ```
 
@@ -408,7 +408,7 @@ Select the task execution role and define the CPU and memory settings for Task s
 
 
 
-Let's add the two containers 'mymvcweb' and 'reverseproxy' to the container definitions.
+Let's add the two containers 'webapp' and 'reverseproxy' to the container definitions.
 
 ![](/images/pic12.jpeg)
 
