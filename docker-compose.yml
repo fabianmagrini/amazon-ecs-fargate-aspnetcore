@@ -4,18 +4,49 @@ services:
     build:
       context: ./reverseproxy
       dockerfile: Dockerfile
+    networks:
+      - proxymesh
     ports:
       - "80:80"
-    links :
-      - webapp
   webapp:
     build:
       context: ./webapp
       dockerfile: Dockerfile
+    networks:
+      proxymesh:
+        aliases:
+          - webapp
     ports:
       - "5000:5000"
-
-
-
-
-     
+  service-blue:
+    build:
+      context: ./webapi
+      dockerfile: Dockerfile
+    networks:
+      proxymesh:
+        aliases:
+          - service-blue
+    environment:
+      - SERVICE_NAME=blue
+      - ASPNETCORE_URLS=http://*:6000
+    expose:
+      - "6000"
+    ports:
+      - "6000:6000"
+  service-green:
+    build:
+      context: ./webapi
+      dockerfile: Dockerfile
+    networks:
+      proxymesh:
+        aliases:
+          - service-green
+    environment:
+      - SERVICE_NAME=green
+      - ASPNETCORE_URLS=http://*:7000
+    expose:
+      - "7000"
+    ports:
+      - "7000:7000"
+networks:
+  proxymesh: {}
